@@ -19,7 +19,7 @@ cache(GeneratorFunction, ms)
 ```
 var cache = require('co-cache');
 
-var getTopicsByTab = cache(function* (tab, p) {
+var getTopicsByTab = cache(function* getTopicsByTab(tab, p) {
   var query = {};
   if (tab) { query.tab = tab; }
   p = p || 1;
@@ -31,6 +31,8 @@ co(function* () {
   ...
 }).catch(onerror);
 ```
+
+**Note:** You must specify a name to `GeneratorFunction` for cache key.
 
 ### License
 
