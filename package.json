@@ -1,0 +1,19 @@
+{
+  "name": "co-cache",
+  "description": "GeneratorFunction cache.",
+  "version": "0.0.3",
+  "keywords": [
+    "co",
+    "cache",
+    "GeneratorFunction",
+    "Generator"
+  ],
+  "dependencies": {
+    "memory-cache": "^0.1.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nswbmw/co-cache"
+  },
+  "license": "MIT"
+}
