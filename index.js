@@ -16,6 +16,9 @@ module.exports = function (genFunc, time) {
   return function* cache() {
     var args =  Array.prototype.slice.call(arguments);
     var cacheKey = genFunc.name + args.map(function (arg) {
+      if (!arg) {
+        return arg;
+      }
       switch (typeof arg) {
       case 'function':
         return arg.name;
