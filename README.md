@@ -1,6 +1,6 @@
 ## co-cache
 
-Cache GeneratorFunction result, only support `function`, `string`, `number` and `boolean` as parameters.
+Cache result in redis for GeneratorFunction or function that return a Promise.
 
 ### Install
 
@@ -11,29 +11,49 @@ npm i co-cache --save
 ### Usage
 
 ```
-cache(GeneratorFunction, ms)
+cache(function, options)
 ```
+
+options {Object|Number->expire}
+
+- client: {Object} redis client of [ioredis](https://github.com/luin/ioredis).
+- prefix: {String} prefix for redis cache, default `module.parent.filename + ':'`.
+- key: {GeneratorFunction|function->Promise} prefix + key == cacheKey, default `function.name`.
+- expire: {Number->ms} expire in ms.
+- others options see [ioredis](https://github.com/luin/ioredis/blob/master/API.md#new-redisport-host-options)
 
 ### Example
 
 ```
 var cache = require('co-cache');
 
-var getTopicsByTab = cache(function* getTopicsByTab(tab, p) {
-  var query = {};
-  if (tab) { query.tab = tab; }
-  p = p || 1;
-  return yield Topic.find(query).skip((p - 1) * 10).limit(10).exec();
+var getIndex = cache(function getIndex() {
+  return client.db('test').collection('test').find().limit(10).toArray();
 }, 10000);
 
+var getTopicsByPage = cache(function* getTopicsByPage(p) {
+  p = p || 1;
+  return yield client.db('test').collection('test').find().skip((p - 1) * 10).limit(10).toArray();
+}, {
+  prefix: 'cache:',
+  key: function* (p) {
+    return this.name + ':' + (p || 1);
+  },
+  expire: 10000
+});
+
 co(function* () {
-  var topics = yield getTopicsByTab('question', 2);
+  var topics = yield getTopicsByTab(2);
+  var indexes = yield getIndex();
   ...
 }).catch(onerror);
 ```
 
-**Note:** You must specify a name to `GeneratorFunction` for cache key.
+### Test
+
+```
+DEBUG=co-cache node --harmony example
+```
 
 ### License
-
 MIT
