@@ -27,8 +27,8 @@ module.exports = function (fn, options) {
   let isGeneratorFunctionKey = isGeneratorFn(key);
 
   if (isGeneratorFunctionFn) {
-    if (!key || !(('string' === typeof key) || ('function' === typeof key) || isGeneratorFunctionKey)) {
-      throw new Error('`key` must be function or generatorFunction or string!');
+    if (!key || !(('string' === typeof key) || ('function' === typeof key))) {
+      throw new Error('`key` must be string or function or generatorFunction!');
     }
     // GeneratorFunction
     return function* () {
@@ -36,12 +36,10 @@ module.exports = function (fn, options) {
       let cacheKey;
       if ('string' === typeof key) {
         cacheKey = prefix + key;
-      }
-      if ('function' === typeof key) {
-        cacheKey = prefix + key.apply(fn, args);
-      }
-      if (isGeneratorFunctionKey) {
+      } else if (isGeneratorFunctionKey) {
         cacheKey = prefix + (yield key.apply(fn, args));
+      } else if ('function' === typeof key) {
+        cacheKey = prefix + key.apply(fn, args);
       }
 
       let result = yield redis.get(cacheKey);
@@ -57,7 +55,7 @@ module.exports = function (fn, options) {
     };
   } else {
     if (!key || !(('string' === typeof key) || ('function' === typeof key))) {
-      throw new Error('`key` must be function or or string!');
+      throw new Error('`key` must be string or function!');
     }
     // Promise
     return function () {
@@ -65,8 +63,7 @@ module.exports = function (fn, options) {
       let cacheKey;
       if ('string' === typeof key) {
         cacheKey = prefix + key;
-      }
-      if ('function' === typeof key) {
+      } else if ('function' === typeof key) {
         cacheKey = prefix + key.apply(fn, args);
       }
 
