@@ -70,7 +70,7 @@ module.exports = function (fn, options) {
         cacheKey = prefix + key.apply(fn, args);
       }
 
-      var _result;
+      let _result;
       return redis
         .get(cacheKey)
         .then(function (result) {
