@@ -11,14 +11,14 @@ npm i co-cache --save
 ### Usage
 
 ```
-cache(function, options)
+cache(function, options) => {GeneratorFunction|function->Promise}
 ```
 
-options {Object|Number->expire}
+options {Object|Number->expire}:
 
 - client: {Object} redis client of [ioredis](https://github.com/luin/ioredis).
 - prefix: {String} prefix for redis cache, default `module.parent.filename + ':'`.
-- key: {GeneratorFunction|function->Promise} prefix + key == cacheKey, default `function.name`.
+- key: {String|GeneratorFunction|function->Promise} prefix + key == cacheKey, default `function.name`.
 - expire: {Number->ms} expire in ms.
 - others options see [ioredis](https://github.com/luin/ioredis/blob/master/API.md#new-redisport-host-options)
 
@@ -43,8 +43,8 @@ var getTopicsByPage = cache(function* getTopicsByPage(p) {
 });
 
 co(function* () {
+  getIndex().then(function () { ... });
   var topics = yield getTopicsByTab(2);
-  var indexes = yield getIndex();
   ...
 }).catch(onerror);
 ```

@@ -37,8 +37,7 @@ MongoClient.connect('mongodb://localhost:27017', function (err, client) {
       expire: 10000
     });
 
-    yield getIndex();
-    yield getIndex();
+    yield getIndex().then(getIndex);
 
     yield getTopicsByPage();
     yield getTopicsByPage(1);
@@ -48,6 +47,7 @@ MongoClient.connect('mongodb://localhost:27017', function (err, client) {
     yield getTopicsByPage(3);
 
     yield coll.remove();
+    process.exit(0);
   }).catch(function (e) {
     console.error(e.stack);
   });
