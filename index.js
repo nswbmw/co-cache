@@ -33,69 +33,87 @@ module.exports = function (fn, options) {
     // GeneratorFunction
     return function* () {
       let args =  [].slice.call(arguments);
-      let cacheKey;
+      let _key;
       if ('string' === typeof key) {
-        cacheKey = prefix + key;
+        _key = key;
       } else if (isGeneratorFunctionKey) {
-        cacheKey = prefix + (yield key.apply(fn, args));
-      } else if ('function' === typeof key) {
-        cacheKey = prefix + key.apply(fn, args);
+        _key = yield key.apply(fn, args);
+      } else {
+        _key = key.apply(fn, args);
       }
 
-      let result = yield redis.get(cacheKey);
-      if (result) {
-        debug('get %s -> %j', cacheKey, result);
-        return JSON.parse(result);
+      let cacheKey = prefix + _key;
+      let result;
+      if (_key !== false) {
+        result = yield redis.get(cacheKey);
+        if (result) {
+          debug('get %s -> %j', cacheKey, result);
+          return JSON.parse(result);
+        }
       }
+
       result = yield fn.apply(fn, args);
-      yield redis.set(cacheKey, JSON.stringify(result), 'PX', expire);
-      debug('set %s -> %j', cacheKey, result);
+
+      if (_key !== false) {
+        yield redis.set(cacheKey, JSON.stringify(result), 'PX', expire);
+        debug('set %s -> %j', cacheKey, result);
+      }
 
       return result;
     };
   } else {
-    if (!key || !(('string' === typeof key) || ('function' === typeof key))) {
-      throw new Error('`key` must be string or function!');
+    if (!key || isGeneratorFunctionKey || !(('string' === typeof key) || ('function' === typeof key))) {
+      throw new Error('`key` must be string or function (not generatorFunction)!');
     }
     // Promise
     return function () {
       let args =  [].slice.call(arguments);
-      let cacheKey;
+      let _key;
       if ('string' === typeof key) {
-        cacheKey = prefix + key;
-      } else if ('function' === typeof key) {
-        cacheKey = prefix + key.apply(fn, args);
+        _key = key;
+      } else {
+        _key = key.apply(fn, args);
       }
 
+      let cacheKey = prefix + _key;
       let _result;
-      return redis
-        .get(cacheKey)
-        .then(function (result) {
-          if (result) {
-            debug('get %s -> %j', cacheKey, result);
-            _result = JSON.parse(result);
-          }
-        })
-        .then(function () {
-          if (_result) {
-            return;
-          }
-          return fn.apply(fn, args);
-        })
-        .then(function (result) {
-          if (_result) {
-            return;
-          }
-          _result = result;
-          return redis
-            .set(cacheKey, JSON.stringify(result), 'PX', expire)
-            .then(function () {
-              debug('set %s -> %j', cacheKey, result);
-            });
-        })
-        .then(function () {
-          return _result;
-        });
+      return Promise.resolve()
+      .then(function () {
+        if (_key === false)  {
+          return;
+        }
+        return redis
+          .get(cacheKey)
+          .then(function (result) {
+            if (result) {
+              debug('get %s -> %j', cacheKey, result);
+              _result = JSON.parse(result);
+            }
+          });
+      })
+      .then(function () {
+        if (_result) {
+          return;
+        }
+        return fn.apply(fn, args);
+      })
+      .then(function (result) {
+        if (_result) {
+          return;
+        }
+        _result = result;
+        if (_key === false)  {
+          return;
+        }
+        return redis
+          .set(cacheKey, JSON.stringify(result), 'PX', expire)
+          .then(function () {
+            debug('set %s -> %j', cacheKey, result);
+          });
+      })
+      .then(function () {
+        return _result;
+      });
     };
   }
 };

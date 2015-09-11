@@ -31,20 +31,23 @@ MongoClient.connect('mongodb://localhost:27017', function (err, client) {
       return yield coll.find().skip((p - 1) * 10).limit(10).toArray();
     }, {
       prefix: 'cache:',
-      key: function* (p) {
+      key: function (p) {
+        if (p >= 3) {
+          return false; // only cache 1-2 pages
+        }
         return this.name + ':' + (p || 1);
       },
       expire: 10000
     });
 
-    yield getIndex().then(getIndex);
+    console.log('getIndex().then(getIndex) -> %j', yield getIndex().then(getIndex));
 
-    yield getTopicsByPage();
-    yield getTopicsByPage(1);
-    yield getTopicsByPage(2);
-    yield getTopicsByPage(2);
-    yield getTopicsByPage(3);
-    yield getTopicsByPage(3);
+    console.log('getTopicsByPage() -> %j', yield getTopicsByPage());
+    console.log('getTopicsByPage(1) -> %j', yield getTopicsByPage(1));
+    console.log('getTopicsByPage(2) -> %j', yield getTopicsByPage(2));
+    console.log('getTopicsByPage(2) -> %j', yield getTopicsByPage(2));
+    console.log('getTopicsByPage(3) -> %j', yield getTopicsByPage(3));
+    console.log('getTopicsByPage(3) -> %j', yield getTopicsByPage(3));
 
     yield coll.remove();
     process.exit(0);

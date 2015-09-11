@@ -18,7 +18,7 @@ options {Object|Number->expire}:
 
 - client: {Object} redis client of [ioredis](https://github.com/luin/ioredis).
 - prefix: {String} prefix for redis cache, default `module.parent.filename + ':'`.
-- key: {String|GeneratorFunction|function->Promise} prefix + key == cacheKey, default `function.name`.
+- key: {String|GeneratorFunction|function->Promise} prefix + key == cacheKey, default `function.name`, if return `false`, skip get&set cache.
 - expire: {Number->ms} expire in ms.
 - others options see [ioredis](https://github.com/luin/ioredis/blob/master/API.md#new-redisport-host-options)
 
@@ -36,7 +36,10 @@ var getTopicsByPage = cache(function* getTopicsByPage(p) {
   return yield client.db('test').collection('test').find().skip((p - 1) * 10).limit(10).toArray();
 }, {
   prefix: 'cache:',
-  key: function* (p) {
+  key: function (p) { // or function*
+    if (p >= 3) {
+      return false; // only cache 1-2 pages
+    }
     return this.name + ':' + (p || 1);
   },
   expire: 10000
