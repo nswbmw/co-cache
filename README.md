@@ -11,9 +11,11 @@ npm i co-cache --save
 ### Usage
 
 ```
-cache(function, options) => {GeneratorFunction|function->Promise}
+var cache = require('co-cache')(defaultConfig);
+cache(fn[, options]) => {GeneratorFunction|function->Promise}
 ```
 
+defaultConfig {Object}:  
 options {Object|Number->expire}:
 
 - client: {Object} redis client of [ioredis](https://github.com/luin/ioredis).
@@ -22,10 +24,12 @@ options {Object|Number->expire}:
 - expire: {Number->ms} expire in ms.
 - others options see [ioredis](https://github.com/luin/ioredis/blob/master/API.md#new-redisport-host-options)
 
+**NB:** If both `defaultConfig` and `options` missing, `cache` will not work.
+
 ### Example
 
 ```
-var cache = require('co-cache');
+var cache = require('co-cache')();
 
 var getIndex = cache(function getIndex() {
   return client.db('test').collection('test').find().limit(10).toArray();
@@ -43,6 +47,37 @@ var getTopicsByPage = cache(function* getTopicsByPage(p) {
     return this.name + ':' + (p || 1);
   },
   expire: 10000
+});
+
+co(function* () {
+  getIndex().then(function () { ... });
+  var topics = yield getTopicsByTab(2);
+  ...
+}).catch(onerror);
+```
+
+or use `defaultConfig`:
+
+```
+var cache = require('co-cache')({
+  expire: 10 * 1000
+});
+
+var getIndex = cache(function getIndex() {
+  return client.db('test').collection('test').find().limit(10).toArray();
+});
+
+var getTopicsByPage = cache(function* getTopicsByPage(p) {
+  p = p || 1;
+  return yield client.db('test').collection('test').find().skip((p - 1) * 10).limit(10).toArray();
+}, {
+  prefix: 'cache:',
+  key: function (p) { // or function*
+    if (p >= 3) {
+      return false; // only cache 1-2 pages
+    }
+    return this.name + ':' + (p || 1);
+  }
 });
 
 co(function* () {

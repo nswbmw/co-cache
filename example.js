@@ -1,6 +1,8 @@
 'use strict';
 
-let cache = require('.');
+let cache = require('.')({
+  expire: 10 * 1000 // default expire
+});
 let co = require('co');
 let MongoClient = require('mongodb').MongoClient;
 
@@ -24,7 +26,7 @@ MongoClient.connect('mongodb://localhost:27017', function (err, client) {
 
     let getIndex = cache(function getIndex() {
       return client.db('test').collection('test').find().limit(10).toArray();
-    }, 10000);
+    });
 
     let getTopicsByPage = cache(function* getTopicsByPage(p) {
       p = p || 1;
@@ -36,8 +38,7 @@ MongoClient.connect('mongodb://localhost:27017', function (err, client) {
           return false; // only cache 1-2 pages
         }
         return this.name + ':' + (p || 1);
-      },
-      expire: 10000
+      }
     });
 
     console.log('getIndex().then(getIndex) -> %j', yield getIndex().then(getIndex));
