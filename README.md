@@ -51,7 +51,7 @@ var getTopicsByPage = cache(function* getTopicsByPage(p) {
 
 co(function* () {
   getIndex().then(function () { ... });
-  var topics = yield getTopicsByTab(2);
+  var topics = yield getTopicsByPage(2);
   ...
 }).catch(onerror);
 ```
@@ -82,7 +82,7 @@ var getTopicsByPage = cache(function* getTopicsByPage(p) {
 
 co(function* () {
   getIndex().then(function () { ... });
-  var topics = yield getTopicsByTab(2);
+  var topics = yield getTopicsByPage(2);
   ...
 }).catch(onerror);
 ```
