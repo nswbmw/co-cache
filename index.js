@@ -1,5 +1,6 @@
 'use strict';
 
+let ms = require('ms');
 let isGeneratorFn = require('is-generator').fn;
 let debug = require('debug')('co-cache');
 let merge = require('merge-descriptors');
@@ -25,10 +26,8 @@ module.exports = function (defaultConfig) {
         return fn;
       }
     }
-    if ('number' === typeof options) {
+    if ('object' !== typeof options) {
       options = { expire: options };
-    } else if ('object' !== typeof options) {
-      throw new Error('`options` must be number or object!');
     }
     merge(options, defaultConfig, false);
 
@@ -68,7 +67,7 @@ module.exports = function (defaultConfig) {
         result = yield fn.apply(fn, args);
 
         if (_key !== false) {
-          yield redis.set(cacheKey, JSON.stringify(result), 'PX', expire);
+          yield redis.set(cacheKey, JSON.stringify(result), 'PX', ms(expire));
           debug('set %s -> %j', cacheKey, result);
         }
 
@@ -119,7 +118,7 @@ module.exports = function (defaultConfig) {
             return;
           }
           return redis
-            .set(cacheKey, JSON.stringify(result), 'PX', expire)
+            .set(cacheKey, JSON.stringify(result), 'PX', ms(expire))
             .then(function () {
               debug('set %s -> %j', cacheKey, result);
             });
