@@ -67,7 +67,7 @@ module.exports = function (defaultConfig) {
         result = yield fn.apply(fn, args);
 
         if (_key !== false) {
-          yield redis.set(cacheKey, JSON.stringify(result), 'PX', ms(expire));
+          yield redis.set(cacheKey, JSON.stringify(result), 'PX', ms(expire + ''));
           debug('set %s -> %j', cacheKey, result);
         }
 
@@ -118,7 +118,7 @@ module.exports = function (defaultConfig) {
             return;
           }
           return redis
-            .set(cacheKey, JSON.stringify(result), 'PX', ms(expire))
+            .set(cacheKey, JSON.stringify(result), 'PX', ms(expire + ''))
             .then(function () {
               debug('set %s -> %j', cacheKey, result);
             });
