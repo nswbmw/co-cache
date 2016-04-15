@@ -22,6 +22,8 @@ options {Object|Number->expire}:
 - prefix: {String} prefix for redis cache, default `module.parent.filename + ':'`.
 - key: {String|GeneratorFunction|function->Promise} prefix + key == cacheKey, default `function.name`, if return `false`, skip get&set cache.
 - expire: {Number->ms} expire in ms.
+- get: {Function} function to get cache, default `JSON.parse`.
+- set: {Function} function to set cache, default `JSON.stringify`.
 - others options see [ioredis](https://github.com/luin/ioredis/blob/master/API.md#new-redisport-host-options)
 
 **NB:** If both `defaultConfig` and `options` missing, `cache` will not work.

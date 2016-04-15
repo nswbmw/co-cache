@@ -1,7 +1,7 @@
 {
   "name": "co-cache",
   "description": "Cache result in redis for GeneratorFunction or function that return a Promise.",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "scripts": {
     "test": "DEBUG=co-cache node --harmony example"
   },

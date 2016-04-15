@@ -37,6 +37,8 @@ module.exports = function (defaultConfig) {
     let key = options.key || fn.name;
     let isGeneratorFunctionFn = isGeneratorFn(fn);
     let isGeneratorFunctionKey = isGeneratorFn(key);
+    let getter = options.get || defaultGet;
+    let setter = options.set || defaultSet;
 
     if (isGeneratorFunctionFn) {
       if (!key || !(('string' === typeof key) || ('function' === typeof key))) {
@@ -57,17 +59,17 @@ module.exports = function (defaultConfig) {
         let cacheKey = prefix + _key;
         let result;
         if (_key !== false) {
-          result = yield redis.get(cacheKey);
+          result = yield getter(redis, cacheKey);
           if (result) {
             debug('get %s -> %j', cacheKey, result);
-            return JSON.parse(result);
+            return result;
           }
         }
 
         result = yield fn.apply(fn, args);
 
         if (_key !== false) {
-          yield redis.set(cacheKey, JSON.stringify(result), 'PX', ms(expire + ''));
+          yield setter(redis, cacheKey, result, ms(expire + ''));
           debug('set %s -> %j', cacheKey, result);
         }
 
@@ -94,12 +96,11 @@ module.exports = function (defaultConfig) {
           if (_key === false)  {
             return;
           }
-          return redis
-            .get(cacheKey)
+          return getter(redis, cacheKey)
             .then(function (result) {
               if (result) {
                 debug('get %s -> %j', cacheKey, result);
-                _result = JSON.parse(result);
+                _result = result;
               }
             });
         })
@@ -117,8 +118,7 @@ module.exports = function (defaultConfig) {
           if (_key === false)  {
             return;
           }
-          return redis
-            .set(cacheKey, JSON.stringify(result), 'PX', ms(expire + ''))
+          return setter(redis, cacheKey, result, ms(expire + ''))
             .then(function () {
               debug('set %s -> %j', cacheKey, result);
             });
@@ -130,3 +130,16 @@ module.exports = function (defaultConfig) {
     }
   };
 };
+
+function defaultGet(redis, cacheKey) {
+  return redis.get(cacheKey).then(function (result) {
+    if (result) {
+      return JSON.parse(result);
+    }
+    return null;
+  });
+}
+
+function defaultSet(redis, cacheKey, result, ms) {
+  return redis.set(cacheKey, JSON.stringify(result), 'PX', ms);
+}
