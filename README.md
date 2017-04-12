@@ -19,7 +19,7 @@ defaultConfig {Object}:
 options {Object|Number->expire}:
 
 - client: {Object} redis client of [ioredis](https://github.com/luin/ioredis).
-- prefix: {String} prefix for redis cache, default `module.parent.filename + ':'`.
+- prefix: {String} prefix for redis cache, default `''`.
 - key: {String|GeneratorFunction|function->Promise} prefix + key == cacheKey, default `function.name`, if return `false`, skip get&set cache.
 - expire: {Number->ms} expire in ms.
 - get: {Function} function to get cache, default `JSON.parse`.
