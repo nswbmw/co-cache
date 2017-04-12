@@ -89,6 +89,23 @@ co(function* () {
 }).catch(onerror);
 ```
 
+### Default get/set
+
+```
+function defaultGet(redis, cacheKey) {
+  return redis.get(cacheKey).then(function (result) {
+    if (result) {
+      return JSON.parse(result);
+    }
+    return null;
+  });
+}
+
+function defaultSet(redis, cacheKey, result, ms) {
+  return redis.set(cacheKey, JSON.stringify(result), 'PX', ms);
+}
+```
+
 ### Test
 
 ```

@@ -1,7 +1,7 @@
 {
   "name": "co-cache",
   "description": "Cache result in redis for GeneratorFunction or function that return a Promise.",
-  "version": "2.3.1",
+  "version": "2.4.0",
   "scripts": {
     "test": "DEBUG=co-cache node --harmony example"
   },
@@ -13,11 +13,11 @@
     "Promise"
   ],
   "dependencies": {
-    "debug": "^2.2.0",
-    "ioredis": "^2.0.1",
+    "debug": "^2.6.3",
+    "ioredis": "^2.5.0",
     "is-generator": "^1.0.3",
-    "merge-descriptors": "^1.0.0",
-    "ms": "^0.7.1"
+    "merge-descriptors": "^1.0.1",
+    "ms": "^1.0.0"
   },
   "repository": {
     "type": "git",
@@ -26,6 +26,6 @@
   "license": "MIT",
   "devDependencies": {
     "co": "^4.6.0",
-    "mongodb": "^2.0.42"
+    "mongodb": "^2.2.25"
   }
 }

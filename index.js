@@ -32,7 +32,7 @@ module.exports = function (defaultConfig) {
     merge(options, defaultConfig, false);
 
     let redis = options.client || new require('ioredis')(options);
-    let prefix = typeof options.prefix === 'string' ? options.prefix : module.parent.filename + ':';
+    let prefix = typeof options.prefix === 'string' ? options.prefix : '';
     let expire = options.expire || 10000;
     let key = options.key || fn.name;
     let isGeneratorFunctionFn = isGeneratorFn(fn);
