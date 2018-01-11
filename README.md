@@ -1,6 +1,6 @@
 ## co-cache
 
-Cache result in redis for GeneratorFunction or function that return a Promise.
+Cache result in redis for GeneratorFunction or AsyncFunction.
 
 ### Install
 
@@ -12,7 +12,7 @@ npm i co-cache --save
 
 ```
 var cache = require('co-cache')(defaultConfig);
-cache(fn[, options]) => {GeneratorFunction|function->Promise}
+cache(fn[, options]) => {GeneratorFunction|AsyncFunction}
 ```
 
 defaultConfig {Object}:  
@@ -20,7 +20,7 @@ options {Object|Number->expire}:
 
 - client: {Object} redis client of [ioredis](https://github.com/luin/ioredis).
 - prefix: {String} prefix for redis cache, default `''`.
-- key: {String|GeneratorFunction|function->Promise} prefix + key == cacheKey, default `function.name`, if return `false`, skip get&set cache.
+- key: {String|GeneratorFunction|AsyncFunction} prefix + key == cacheKey, default `function.name`, if return `false`, skip get&set cache.
 - expire: {Number->ms} expire in ms.
 - get: {Function} function to get cache, default `JSON.parse`.
 - set: {Function} function to set cache, default `JSON.stringify`.
