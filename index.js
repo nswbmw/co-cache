@@ -137,9 +137,13 @@ function defaultGet(redis, cacheKey) {
       return JSON.parse(result);
     }
     return null;
+  }).catch(function () {
+    return null;
   });
 }
 
 function defaultSet(redis, cacheKey, result, ms) {
-  return redis.set(cacheKey, JSON.stringify(result), 'PX', ms);
+  return redis.set(cacheKey, JSON.stringify(result), 'PX', ms).catch(function () {
+    return null;
+  });
 }
