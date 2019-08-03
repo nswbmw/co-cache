@@ -1,3 +1,8 @@
+## 2019-08-03/3.0.0
+
+- rewrite with async/await
+- remove support for `GeneratorFunction`
+
 ## 2018-01-11/2.5.0
 
 - update deps

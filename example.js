@@ -1,58 +1,40 @@
-'use strict';
+const Mongolass = require('mongolass')
+const mongolass = new Mongolass()
+mongolass.connect('mongodb://localhost:27017/test')
 
-let cache = require('.')({
+const cache = require('.')({
+  prefix: 'cache:',
   expire: 10 * 1000 // default expire
-});
-let co = require('co');
-let MongoClient = require('mongodb').MongoClient;
+})
 
-MongoClient.connect('mongodb://localhost:27017', function (err, client) {
-  if (err) {
-    console.error(err);
-    throw err;
+const User = mongolass.model('User')
+
+;(async function () {
+  // create some users
+  for (let i = 1; i <= 10; i++) {
+    await User.insertOne({ name: i })
   }
 
-  client.on('close', function (e) {
-    console.error(new Date() + ': mongodb connection closed.');
-    console.error(e);
-    process.exit(1);
-  });
-
-  co(function* () {
-    let coll = client.db('test').collection('test');
-    for (let i = 1; i <= 20; i++) {
-      yield coll.insert({ topic: i });
-    }
-
-    let getIndex = cache(function getIndex() {
-      return client.db('test').collection('test').find().limit(10).toArray();
-    });
-
-    let getTopicsByPage = cache(function* getTopicsByPage(p) {
-      p = p || 1;
-      return yield coll.find().skip((p - 1) * 10).limit(10).toArray();
-    }, {
-      prefix: 'cache:',
-      key: function (p) {
-        if (p >= 3) {
-          return false; // only cache 1-2 pages
-        }
-        return this.name + ':' + (p || 1);
+  const getUsersByPage = cache(function getUsersByPage(p) {
+    return User
+      .find()
+      .skip((p - 1) * 1)
+      .limit(1)
+  }, {
+    key: function (p) {
+      if (p >= 3) {
+        return false // only cache 1-2 pages
       }
-    });
+      return this.name + ':' + p
+    }
+  })
 
-    console.log('getIndex().then(getIndex) -> %j', yield getIndex().then(getIndex));
+  await getUsersByPage(1)
+  await getUsersByPage(2)
+  await getUsersByPage(2)
+  console.log(await getUsersByPage(3))
 
-    console.log('getTopicsByPage() -> %j', yield getTopicsByPage());
-    console.log('getTopicsByPage(1) -> %j', yield getTopicsByPage(1));
-    console.log('getTopicsByPage(2) -> %j', yield getTopicsByPage(2));
-    console.log('getTopicsByPage(2) -> %j', yield getTopicsByPage(2));
-    console.log('getTopicsByPage(3) -> %j', yield getTopicsByPage(3));
-    console.log('getTopicsByPage(3) -> %j', yield getTopicsByPage(3));
+  await User.remove()
 
-    yield coll.remove();
-    process.exit(0);
-  }).catch(function (e) {
-    console.error(e.stack);
-  });
-});
+  process.exit()
+})().catch(console.error)

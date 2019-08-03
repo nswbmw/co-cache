@@ -1,18 +1,18 @@
 ## co-cache
 
-Cache result in redis for GeneratorFunction or AsyncFunction.
+Cache result in redis for AsyncFunction.
 
 ### Install
 
-```
-npm i co-cache --save
+```bash
+$ npm i co-cache --save
 ```
 
 ### Usage
 
-```
-var cache = require('co-cache')(defaultConfig);
-cache(fn[, options]) => {GeneratorFunction|AsyncFunction}
+```js
+const cache = require('co-cache')(defaultConfig);
+cache(fn[, options]) => AsyncFunction
 ```
 
 defaultConfig {Object}:  
@@ -20,97 +20,88 @@ options {Object|Number->expire}:
 
 - client: {Object} redis client of [ioredis](https://github.com/luin/ioredis).
 - prefix: {String} prefix for redis cache, default `''`.
-- key: {String|GeneratorFunction|AsyncFunction} prefix + key == cacheKey, default `function.name`, if return `false`, skip get&set cache.
-- expire: {Number->ms} expire in ms.
-- get: {Function} function to get cache, default `JSON.parse`.
-- set: {Function} function to set cache, default `JSON.stringify`.
-- others options see [ioredis](https://github.com/luin/ioredis/blob/master/API.md#new-redisport-host-options)
-
-**NB:** If both `defaultConfig` and `options` missing, `cache` will not work.
+- key: {String|Function|AsyncFunction} prefix + key == cacheKey, default `fn.name`, if return `false`, skip get&set cache.
+- expire: {Number} expire in ms.
+- get: {Function|AsyncFunction} function to get cache.
+- set: {Function|AsyncFunction} function to set cache.
+- redisOpt: {Object} others options see [ioredis](https://github.com/luin/ioredis/blob/master/API.md#new-redisport-host-options)
 
 ### Example
 
-```
-var cache = require('co-cache')();
+```js
+const Mongolass = require('mongolass')
+const mongolass = new Mongolass()
+mongolass.connect('mongodb://localhost:27017/test')
 
-var getIndex = cache(function getIndex() {
-  return client.db('test').collection('test').find().limit(10).toArray();
-}, 10000);
-
-var getTopicsByPage = cache(function* getTopicsByPage(p) {
-  p = p || 1;
-  return yield client.db('test').collection('test').find().skip((p - 1) * 10).limit(10).toArray();
-}, {
+const cache = require('.')({
   prefix: 'cache:',
-  key: function (p) { // or function*
-    if (p >= 3) {
-      return false; // only cache 1-2 pages
-    }
-    return this.name + ':' + (p || 1);
-  },
-  expire: 10000
-});
+  expire: 10 * 1000 // default expire
+})
 
-co(function* () {
-  getIndex().then(function () { ... });
-  var topics = yield getTopicsByPage(2);
-  ...
-}).catch(onerror);
-```
+const User = mongolass.model('User')
 
-or use `defaultConfig`:
-
-```
-var cache = require('co-cache')({
-  expire: 10 * 1000
-});
-
-var getIndex = cache(function getIndex() {
-  return client.db('test').collection('test').find().limit(10).toArray();
-});
-
-var getTopicsByPage = cache(function* getTopicsByPage(p) {
-  p = p || 1;
-  return yield client.db('test').collection('test').find().skip((p - 1) * 10).limit(10).toArray();
-}, {
-  prefix: 'cache:',
-  key: function (p) { // or function*
-    if (p >= 3) {
-      return false; // only cache 1-2 pages
-    }
-    return this.name + ':' + (p || 1);
+;(async function () {
+  // create some users
+  for (let i = 1; i <= 10; i++) {
+    await User.insertOne({ name: i })
   }
-});
 
-co(function* () {
-  getIndex().then(function () { ... });
-  var topics = yield getTopicsByPage(2);
-  ...
-}).catch(onerror);
+  const getUsersByPage = cache(function getUsersByPage(p) {
+    return User
+      .find()
+      .skip((p - 1) * 1)
+      .limit(1)
+  }, {
+    key: function (p) {
+      if (p >= 3) {
+        return false // only cache 1-2 pages
+      }
+      return this.name + ':' + p
+    }
+  })
+
+  await getUsersByPage(1)
+  await getUsersByPage(2)
+  await getUsersByPage(2)
+  console.log(await getUsersByPage(3))
+
+  await User.remove()
+
+  process.exit()
+})().catch(console.error)
 ```
 
 ### Default get/set
 
-```
-function defaultGet(redis, cacheKey) {
-  return redis.get(cacheKey).then(function (result) {
-    if (result) {
-      return JSON.parse(result);
-    }
-    return null;
-  });
+```js
+function defaultGet (redis, cacheKey) {
+  return redis
+    .get(cacheKey)
+    .then((result) => {
+      if (result != null) {
+        return JSON.parse(result)
+      }
+    })
+    .catch(() => {})
 }
 
-function defaultSet(redis, cacheKey, result, ms) {
-  return redis.set(cacheKey, JSON.stringify(result), 'PX', ms);
+function defaultSet (redis, cacheKey, result, ms) {
+  // cannot save `undefined`` value, `null` is ok
+  if (result === undefined) {
+    return
+  }
+  return redis
+    .set(cacheKey, JSON.stringify(result), 'PX', ms)
+    .catch(() => {})
 }
 ```
 
 ### Test
 
 ```
-DEBUG=co-cache node --harmony example
+$ npm run test
 ```
 
 ### License
+
 MIT

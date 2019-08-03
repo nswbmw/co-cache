@@ -1,23 +1,21 @@
 {
   "name": "co-cache",
-  "description": "Cache result in redis for GeneratorFunction or AsyncFunction.",
-  "version": "2.5.0",
+  "description": "Cache result in redis for AsyncFunction.",
+  "version": "3.0.0",
   "scripts": {
-    "test": "DEBUG=co-cache node --harmony example"
+    "test": "DEBUG=co-cache node example"
   },
   "keywords": [
     "co",
     "cache",
-    "GeneratorFunction",
-    "Generator",
-    "Promise"
+    "Promise",
+    "AsyncFunction",
+    "async",
+    "await"
   ],
   "dependencies": {
-    "debug": "^3.1.0",
-    "ioredis": "^3.2.2",
-    "is-generator": "^1.0.3",
-    "merge-descriptors": "^1.0.1",
-    "ms": "^2.1.1"
+    "debug": "4.1.1",
+    "ioredis": "^4.14.0"
   },
   "repository": {
     "type": "git",
@@ -25,7 +23,12 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "co": "^4.6.0",
-    "mongodb": "^3.0.1"
+    "eslint": "6.1.0",
+    "eslint-config-standard": "13.0.1",
+    "eslint-plugin-import": "2.18.2",
+    "eslint-plugin-node": "9.1.0",
+    "eslint-plugin-promise": "4.2.1",
+    "eslint-plugin-standard": "4.0.0",
+    "mongolass": "4.4.2"
   }
 }

@@ -1,149 +1,78 @@
-'use strict';
-
-let ms = require('ms');
-let isGeneratorFn = require('is-generator').fn;
-let debug = require('debug')('co-cache');
-let merge = require('merge-descriptors');
+const IORedis = require('ioredis')
+const debug = require('debug')('co-cache')
 
 /**
  * Cache function result
- * 
+ *
  * @param {Object} defaultConfig
  * @return {Function}
  * @api public
  */
 
-module.exports = function (defaultConfig) {
-  defaultConfig = defaultConfig || {};
-  if ('object' !== typeof defaultConfig) {
-    throw new Error('`defaultConfig` must be object!');
+module.exports = function (defaultConfig = {}) {
+  if (typeof defaultConfig !== 'object') {
+    throw new Error('`defaultConfig` must be object!')
   }
-  return function (fn, options) {
-    if (!options) {// if missing, not cache. if {}, use default config
-      if (Object.keys(defaultConfig).length) {
-        options = {};
-      } else {
-        return fn;
+  return function coCache (fn, options = {}) {
+    if (typeof options !== 'object') {
+      options = { expire: options }
+    }
+    options = Object.assign({}, defaultConfig, options)
+
+    const redis = options.client || new IORedis(options.redisOpt)
+    const prefix = typeof options.prefix === 'string' ? options.prefix : ''
+    const expire = options.expire || 10000
+    const key = options.key || fn.name
+    const getter = options.get || defaultGet
+    const setter = options.set || defaultSet
+
+    if (!key || !((typeof key === 'string') || (typeof key === 'function'))) {
+      throw new Error('`key` must be string or function!')
+    }
+
+    return async function () {
+      const args = [].slice.call(arguments)
+      const _key = (typeof key === 'string') ? key : (await key.apply(fn, args))
+
+      if (_key === false) {
+        return fn.apply(this, args)
       }
-    }
-    if ('object' !== typeof options) {
-      options = { expire: options };
-    }
-    merge(options, defaultConfig, false);
 
-    let redis = options.client || new require('ioredis')(options);
-    let prefix = typeof options.prefix === 'string' ? options.prefix : '';
-    let expire = options.expire || 10000;
-    let key = options.key || fn.name;
-    let isGeneratorFunctionFn = isGeneratorFn(fn);
-    let isGeneratorFunctionKey = isGeneratorFn(key);
-    let getter = options.get || defaultGet;
-    let setter = options.set || defaultSet;
+      const cacheKey = prefix + _key
+      let result = await getter(redis, cacheKey)
+      debug('get %s -> %j', cacheKey, result)
 
-    if (isGeneratorFunctionFn) {
-      if (!key || !(('string' === typeof key) || ('function' === typeof key))) {
-        throw new Error('`key` must be string or function or generatorFunction!');
+      if (result !== undefined) {
+        return result
       }
-      // GeneratorFunction
-      return function* () {
-        let args =  [].slice.call(arguments);
-        let _key;
-        if ('string' === typeof key) {
-          _key = key;
-        } else if (isGeneratorFunctionKey) {
-          _key = yield key.apply(fn, args);
-        } else {
-          _key = key.apply(fn, args);
-        }
 
-        let cacheKey = prefix + _key;
-        let result;
-        if (_key !== false) {
-          result = yield getter(redis, cacheKey);
-          if (result) {
-            debug('get %s -> %j', cacheKey, result);
-            return result;
-          }
-        }
+      result = await fn.apply(this, args)
 
-        result = yield fn.apply(fn, args);
+      await setter(redis, cacheKey, result, expire)
+      debug('set %s -> %j', cacheKey, result)
 
-        if (_key !== false) {
-          yield setter(redis, cacheKey, result, ms(expire + ''));
-          debug('set %s -> %j', cacheKey, result);
-        }
-
-        return result;
-      };
-    } else {
-      if (!key || isGeneratorFunctionKey || !(('string' === typeof key) || ('function' === typeof key))) {
-        throw new Error('`key` must be string or function (not generatorFunction)!');
-      }
-      // Promise
-      return function () {
-        let args =  [].slice.call(arguments);
-        let _key;
-        if ('string' === typeof key) {
-          _key = key;
-        } else {
-          _key = key.apply(fn, args);
-        }
-
-        let cacheKey = prefix + _key;
-        let _result;
-        return Promise.resolve()
-        .then(function () {
-          if (_key === false)  {
-            return;
-          }
-          return getter(redis, cacheKey)
-            .then(function (result) {
-              if (result) {
-                debug('get %s -> %j', cacheKey, result);
-                _result = result;
-              }
-            });
-        })
-        .then(function () {
-          if (_result) {
-            return;
-          }
-          return fn.apply(fn, args);
-        })
-        .then(function (result) {
-          if (_result) {
-            return;
-          }
-          _result = result;
-          if (_key === false)  {
-            return;
-          }
-          return setter(redis, cacheKey, result, ms(expire + ''))
-            .then(function () {
-              debug('set %s -> %j', cacheKey, result);
-            });
-        })
-        .then(function () {
-          return _result;
-        });
-      };
+      return result
     }
-  };
-};
-
-function defaultGet(redis, cacheKey) {
-  return redis.get(cacheKey).then(function (result) {
-    if (result) {
-      return JSON.parse(result);
-    }
-    return null;
-  }).catch(function () {
-    return null;
-  });
+  }
 }
 
-function defaultSet(redis, cacheKey, result, ms) {
-  return redis.set(cacheKey, JSON.stringify(result), 'PX', ms).catch(function () {
-    return null;
-  });
+function defaultGet (redis, cacheKey) {
+  return redis
+    .get(cacheKey)
+    .then((result) => {
+      if (result != null) {
+        return JSON.parse(result)
+      }
+    })
+    .catch(() => {})
+}
+
+function defaultSet (redis, cacheKey, result, ms) {
+  // cannot save `undefined`` value, `null` is ok
+  if (result === undefined) {
+    return
+  }
+  return redis
+    .set(cacheKey, JSON.stringify(result), 'PX', ms)
+    .catch(() => {})
 }
