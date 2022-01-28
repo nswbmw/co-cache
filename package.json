@@ -1,7 +1,7 @@
 {
   "name": "co-cache",
   "description": "Cache result in redis for AsyncFunction.",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "scripts": {
     "test": "DEBUG=co-cache node example"
   },
@@ -14,8 +14,8 @@
     "await"
   ],
   "dependencies": {
-    "debug": "4.1.1",
-    "ioredis": "^4.14.0"
+    "debug": "4.3.3",
+    "ioredis": "^4.28.3"
   },
   "repository": {
     "type": "git",
@@ -23,12 +23,12 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "eslint": "6.1.0",
-    "eslint-config-standard": "13.0.1",
-    "eslint-plugin-import": "2.18.2",
-    "eslint-plugin-node": "9.1.0",
-    "eslint-plugin-promise": "4.2.1",
-    "eslint-plugin-standard": "4.0.0",
-    "mongolass": "4.4.2"
+    "eslint": "8.7.0",
+    "eslint-config-standard": "16.0.3",
+    "eslint-plugin-import": "2.25.4",
+    "eslint-plugin-node": "11.1.0",
+    "eslint-plugin-promise": "6.0.0",
+    "eslint-plugin-standard": "4.1.0",
+    "mongolass": "4.4.7"
   }
 }

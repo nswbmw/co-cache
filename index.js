@@ -30,7 +30,7 @@ module.exports = function (defaultConfig = {}) {
       throw new Error('`key` must be string or function!')
     }
 
-    return async function () {
+    async function cache () {
       const args = [].slice.call(arguments)
       const _key = (typeof key === 'string') ? key : (await key.apply(fn, args))
 
@@ -53,6 +53,25 @@ module.exports = function (defaultConfig = {}) {
 
       return result
     }
+
+    async function clear () {
+      const args = [].slice.call(arguments)
+      const _key = (typeof key === 'string') ? key : (await key.apply(fn, args))
+
+      if (_key === false) {
+        return
+      }
+
+      const cacheKey = prefix + _key
+      let result = await redis.del(cacheKey)
+      debug('clear %s -> %j', cacheKey, result)
+
+      return result
+    }
+
+    cache.clear = clear
+
+    return cache
   }
 }
 

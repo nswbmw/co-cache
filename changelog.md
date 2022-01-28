@@ -1,3 +1,7 @@
+## 2022-01-28/3.1.0
+
+- add: `clear` option
+
 ## 2019-08-03/3.0.0
 
 - rewrite with async/await
