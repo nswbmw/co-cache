@@ -33,50 +33,40 @@ $ DEBUG=co-cache node example.js
 ```
 
 ```js
-const Mongolass = require('mongolass')
-const mongolass = new Mongolass()
-mongolass.connect('mongodb://localhost:27017/test')
+process.env.DEBUG = 'co-cache'
 
 const cache = require('.')({
   prefix: 'cache:',
   expire: 10 * 60 * 1000 // default expire
 })
 
-const User = mongolass.model('UserTest')
-
 ;(async function () {
-  // create test users
-  for (let i = 1; i <= 10; i++) {
-    await User.insertOne({ name: i })
-  }
-
-  const getUsersByPage = cache(function getUsersByPage (p) {
-    return User
-      .find()
-      .skip((p - 1) * 1)
-      .limit(1)
+  const someAsyncFn = cache(async function someAsyncFn (number) {
+    console.log(`someAsyncFn: ${number}`)
+    return number
   }, {
-    key: function (p) {
-      if (p >= 3) {
-        return false // only cache 1-2 pages
+    key: function (number) {
+      if (number >= 4) {
+        return false // only cache when number < 4
       }
-      return this.name + ':' + p
+      return this.name + ':' + number
     }
   })
 
-  await getUsersByPage(1)
-  await getUsersByPage(2)
-  await getUsersByPage(2)
-  await getUsersByPage(3)
+  await someAsyncFn(1)
+  await someAsyncFn(2)
+  await someAsyncFn(2) // get from cache
 
-  await getUsersByPage.clear(1) // clear cache
-  await getUsersByPage.clear(2) // clear cache
-  await getUsersByPage.clear(3) // no effect, because there is no cache
-  
-  // remove test users
-  await User.remove()
+  await someAsyncFn.get(3)
+  await someAsyncFn.set(3, 'some value') // manually set cache
+  await someAsyncFn.get(3) // get from cache
 
-  process.exit()
+  await someAsyncFn(4) // not cache
+
+  await someAsyncFn.clear(1) // clear cache
+  await someAsyncFn.clear(2) // clear cache
+  await someAsyncFn.clear(3) // clear cache
+  await someAsyncFn.clear(4) // no effect, because there is no cache
 })().catch(console.error)
 ```
 

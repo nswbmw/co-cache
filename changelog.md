@@ -1,3 +1,8 @@
+## 2024-05-10/4.0.0
+
+- add: `get`, `set` option
+- update deps
+
 ## 2022-01-28/3.1.0
 
 - add: `clear` option

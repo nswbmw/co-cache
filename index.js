@@ -54,6 +54,37 @@ module.exports = function (defaultConfig = {}) {
       return result
     }
 
+    async function get () {
+      const args = [].slice.call(arguments)
+      const _key = (typeof key === 'string') ? key : (await key.apply(fn, args))
+
+      if (_key === false) {
+        return
+      }
+
+      const cacheKey = prefix + _key
+      const result = await getter(redis, cacheKey)
+      debug('get %s -> %j', cacheKey, result)
+
+      return result
+    }
+
+    async function set () {
+      const args = [].slice.call(arguments, 0, -1)
+      const value = [].slice.call(arguments).pop()
+      const _key = (typeof key === 'string') ? key : (await key.apply(fn, args))
+
+      if ((_key === false) || (value === undefined)) {
+        return
+      }
+
+      const cacheKey = prefix + _key
+      const result = await setter(redis, cacheKey, value, expire)
+      debug('set %s -> %j', cacheKey, result)
+
+      return result
+    }
+
     async function clear () {
       const args = [].slice.call(arguments)
       const _key = (typeof key === 'string') ? key : (await key.apply(fn, args))
@@ -63,12 +94,14 @@ module.exports = function (defaultConfig = {}) {
       }
 
       const cacheKey = prefix + _key
-      let result = await redis.del(cacheKey)
+      const result = await redis.del(cacheKey)
       debug('clear %s -> %j', cacheKey, result)
 
       return result
     }
 
+    cache.get = get
+    cache.set = set
     cache.clear = clear
 
     return cache
