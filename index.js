@@ -30,6 +30,11 @@ module.exports = function (defaultConfig = {}) {
       throw new Error('`key` must be string or function!')
     }
 
+    async function raw () {
+      const args = [].slice.call(arguments)
+      return fn.apply(this, args)
+    }
+
     async function cache () {
       const args = [].slice.call(arguments)
       const _key = (typeof key === 'string') ? key : (await key.apply(fn, args))
@@ -100,6 +105,7 @@ module.exports = function (defaultConfig = {}) {
       return result
     }
 
+    cache.raw = raw
     cache.get = get
     cache.set = set
     cache.clear = clear

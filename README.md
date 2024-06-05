@@ -62,6 +62,7 @@ const cache = require('.')({
   await someAsyncFn.get(3) // get from cache
 
   await someAsyncFn(4) // not cache
+  await someAsyncFn.raw(5) // skip cache
 
   await someAsyncFn.clear(1) // clear cache
   await someAsyncFn.clear(2) // clear cache
